@@ -11,7 +11,6 @@ const App = () => {
     <Router>
       <div className="app">
 
-        
         <video 
           autoPlay 
           loop 
