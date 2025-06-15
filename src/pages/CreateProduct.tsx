@@ -13,6 +13,7 @@ const CreateProduct = () => {
     category: '',
   });
   const [images, setImages] = useState<FileList | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,8 +26,46 @@ const CreateProduct = () => {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setImages(e.target.files);
+    if (e.target.files && e.target.files.length > 0) {
+      const files = e.target.files;
+      setImages(files);
+
+      // Crear previsualizaciones
+      const previews: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            previews.push(event.target.result as string);
+            // Actualizar el estado cuando todas las imágenes estén procesadas
+            if (previews.length === files.length) {
+              setImagePreviews(previews);
+            }
+          }
+        };
+        reader.readAsDataURL(files[i]);
+      }
+    } else {
+      setImages(null);
+      setImagePreviews([]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    if (!images) return;
+    
+    // Crear una nueva lista de archivos sin la imagen eliminada
+    const newFiles = Array.from(images).filter((_, i) => i !== index);
+    const dataTransfer = new DataTransfer();
+    newFiles.forEach(file => dataTransfer.items.add(file));
+    
+    // Actualizar el input de archivos
+    const fileInput = document.getElementById('images') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.files = dataTransfer.files;
+      // Disparar el evento change manualmente
+      const event = new Event('change', { bubbles: true });
+      fileInput.dispatchEvent(event);
     }
   };
 
@@ -175,7 +214,7 @@ const CreateProduct = () => {
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">Imágenes (máx. 5)</label>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
+                  <div className="space-y-1 text-center w-full">
                     <svg
                       className="mx-auto h-12 w-12 text-gray-400"
                       stroke="currentColor"
@@ -190,7 +229,32 @@ const CreateProduct = () => {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <div className="flex text-sm text-gray-600">
+                    
+                    {/* Previsualización de imágenes */}
+                    {imagePreviews.length > 0 && (
+                      <div className="flex flex-wrap gap-2 justify-center mb-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={preview} 
+                              alt={`Preview ${index}`} 
+                              className="h-20 w-20 object-cover rounded-md border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex text-sm text-gray-600 justify-center">
                       <label
                         htmlFor="images"
                         className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
@@ -218,18 +282,18 @@ const CreateProduct = () => {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="bg-white py-2 px-4 border border-gray-300 rounded-mdtext-sm font-medium shadow-md hover:shadow-lg transition-shadow duration-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent text-sm font-medium shadow-md hover:shadow-lg transition-shadow duration-300 rounded-md text-black bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
